@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tessan — Simulateur Commercial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F7F6F3;
+  --surface: #FFFFFF;
+  --surface2: #F2F1EE;
+  --border: #E5E3DC;
+  --border2: #D5D2C8;
+  --text: #1A1A18;
+  --text2: #6B6860;
+  --text3: #A8A59E;
+  --blue: #1B4FD8;
+  --blue-bg: #EEF2FE;
+  --green: #166534;
+  --green-bg: #F0FDF4;
+  --green-border: #BBF7D0;
+  --orange: #92400E;
+  --orange-bg: #FFFBEB;
+  --orange-border: #FDE68A;
+  --red: #991B1B;
+  --red-bg: #FEF2F2;
+  --red-border: #FECACA;
+  --radius: 10px;
+  --radius-lg: 14px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+/* ── NAV TABS ── */
+.nav { background: var(--surface); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 1.5rem; gap: 0; position: sticky; top: 0; z-index: 100; }
+.nav-logo { font-size: 13px; font-weight: 700; letter-spacing: .08em; color: var(--blue); text-transform: uppercase; margin-right: 2rem; padding: 1rem 0; white-space: nowrap; }
+.tab { padding: .875rem 1.1rem; font-size: 13px; font-weight: 500; color: var(--text2); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; white-space: nowrap; transition: color .15s; user-select: none; }
+.tab:hover { color: var(--text); }
+.tab.active { color: var(--blue); border-bottom-color: var(--blue); font-weight: 600; }
+.tab-admin { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+.lock-icon { font-size: 12px; }
+
+/* ── PAGE ── */
+.page { display: none; padding: 1.5rem; max-width: 900px; margin: 0 auto; }
+.page.active { display: block; }
+
+/* ── PIN OVERLAY ── */
+.pin-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 200; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+.pin-box { background: var(--surface); border-radius: var(--radius-lg); padding: 2rem; width: 320px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,.2); }
+.pin-box h3 { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+.pin-box p { font-size: 13px; color: var(--text2); margin-bottom: 1.5rem; }
+.pin-dots { display: flex; justify-content: center; gap: 10px; margin-bottom: 1.5rem; }
+.pin-dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--border2); transition: all .15s; }
+.pin-dot.filled { background: var(--blue); border-color: var(--blue); }
+.pin-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.pin-btn { padding: 14px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); font-family: 'DM Mono', monospace; font-size: 18px; cursor: pointer; transition: background .1s; }
+.pin-btn:hover { background: var(--surface2); }
+.pin-btn:active { background: var(--border); }
+.pin-btn.clear { font-size: 13px; font-family: 'DM Sans', sans-serif; font-weight: 500; color: var(--text2); }
+.pin-error { font-size: 12px; color: var(--red); margin-top: 8px; min-height: 16px; }
+.pin-cancel { margin-top: 1rem; font-size: 12px; color: var(--text3); cursor: pointer; }
+.pin-cancel:hover { color: var(--text2); }
+
+/* ── ADMIN PAGE ── */
+.admin-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+.admin-header h2 { font-size: 18px; font-weight: 700; }
+.admin-logout { font-size: 12px; color: var(--text3); cursor: pointer; padding: 5px 10px; border: 1px solid var(--border); border-radius: 99px; }
+.admin-logout:hover { color: var(--text2); }
+.admin-section { margin-bottom: 1.5rem; }
+.admin-section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--text3); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+.admin-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--border); border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); }
+.admin-col-header { background: var(--surface2); padding: 8px 12px; font-size: 11px; font-weight: 600; color: var(--text2); text-align: center; }
+.admin-row-label { background: var(--surface); padding: 10px 12px; font-size: 12px; color: var(--text); display: flex; align-items: center; }
+.admin-cell { background: var(--surface); padding: 6px 10px; display: flex; align-items: center; gap: 4px; }
+.admin-cell input { width: 100%; font-size: 13px; font-weight: 600; font-family: 'DM Mono', monospace; background: transparent; border: none; border-bottom: 1.5px solid var(--border); color: var(--text); outline: none; padding: 2px 0; text-align: right; }
+.admin-cell input:focus { border-bottom-color: var(--blue); }
+.admin-cell .unit { font-size: 11px; color: var(--text3); white-space: nowrap; }
+.admin-save { margin-top: 1rem; padding: 10px 20px; background: var(--blue); color: #fff; border: none; border-radius: var(--radius); font-size: 13px; font-weight: 600; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+.admin-save:hover { background: #1540b0; }
+.save-ok { font-size: 12px; color: var(--green); margin-left: 10px; opacity: 0; transition: opacity .3s; }
+
+/* ── DEVICE PAGE ── */
+.device-header { margin-bottom: 1.25rem; }
+.device-header h2 { font-size: 20px; font-weight: 700; margin-bottom: 3px; }
+.device-header p { font-size: 13px; color: var(--text2); }
+
+.dur-row { display: flex; gap: 6px; margin-bottom: 1.25rem; }
+.dur-btn { padding: 6px 16px; border-radius: 99px; border: 1.5px solid var(--border2); background: var(--surface); font-size: 12px; font-weight: 500; color: var(--text2); cursor: pointer; transition: all .15s; }
+.dur-btn.on { background: var(--blue); color: #fff; border-color: var(--blue); }
+
+/* params grid */
+.params-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem; margin-bottom: 1rem; }
+.params-card-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--text3); margin-bottom: .875rem; }
+.pg2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+.pg3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 10px; }
+.pg4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.pf { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 12px; }
+.pf label { font-size: 10px; font-weight: 600; color: var(--text3); display: block; margin-bottom: 5px; text-transform: uppercase; letter-spacing: .04em; }
+.pf-body { display: flex; align-items: baseline; gap: 4px; }
+.pf-body input { flex: 1; min-width: 0; font-size: 15px; font-weight: 700; font-family: 'DM Mono', monospace; background: transparent; border: none; border-bottom: 1.5px solid var(--border2); color: var(--text); outline: none; padding: 1px 0 3px; }
+.pf-body input:focus { border-bottom-color: var(--blue); }
+.pf-body .unit { font-size: 11px; color: var(--text3); white-space: nowrap; }
+.pf .hint { font-size: 10px; color: var(--text3); margin-top: 4px; }
+
+.toggles { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 1rem; align-items: center; }
+.tog { cursor: pointer; font-size: 12px; padding: 5px 12px; border-radius: 99px; border: 1.5px solid var(--border); background: var(--surface); color: var(--text2); transition: all .15s; user-select: none; display: inline-flex; align-items: center; gap: 6px; }
+.tog .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border2); flex-shrink: 0; transition: background .15s; }
+.tog.on { background: var(--blue-bg); border-color: var(--blue); color: var(--blue); }
+.tog.on .dot { background: var(--blue); }
+.conv-in { width: 64px; font-size: 12px; font-weight: 700; border: none; border-bottom: 1px solid currentColor; background: transparent; outline: none; color: inherit; padding: 0 0 1px; font-family: 'DM Mono', monospace; }
+.vsep { width: 1px; height: 20px; background: var(--border); margin: 0 2px; flex-shrink: 0; }
+
+/* accord */
+.accord { display: flex; align-items: center; gap: 10px; padding: 11px 15px; border-radius: var(--radius); border: 1.5px solid; margin-top: .75rem; }
+.accord.ok { background: var(--green-bg); border-color: var(--green-border); }
+.accord.warn { background: var(--orange-bg); border-color: var(--orange-border); }
+.accord.ko { background: var(--red-bg); border-color: var(--red-border); }
+.accord-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.accord.ok .accord-dot { background: var(--green); }
+.accord.warn .accord-dot { background: var(--orange); }
+.accord.ko .accord-dot { background: var(--red); }
+.accord-main { font-size: 13px; font-weight: 700; }
+.accord.ok .accord-main { color: var(--green); }
+.accord.warn .accord-main { color: var(--orange); }
+.accord.ko .accord-main { color: var(--red); }
+.accord-detail { font-size: 11px; margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.accord-tag { padding: 2px 8px; border-radius: 99px; font-weight: 500; }
+.accord.ok .accord-tag { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
+.accord.warn .accord-tag { background: var(--orange-bg); color: var(--orange); border: 1px solid var(--orange-border); }
+.accord.ko .accord-tag { background: var(--red-bg); color: var(--red); border: 1px solid var(--red-border); }
+
+/* section label */
+.sec { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--text3); margin-bottom: 10px; margin-top: 1.5rem; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+
+/* cards */
+.g2 { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; }
+.g3 { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 10px; }
+.card { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius-lg); padding: 16px; }
+.card.star { border-color: var(--blue); border-width: 2px; }
+.badge { font-size: 10px; font-weight: 700; background: var(--blue-bg); color: var(--blue); padding: 2px 9px; border-radius: 99px; display: inline-block; margin-bottom: 8px; letter-spacing: .02em; }
+.ctitle { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+.csub { font-size: 11px; color: var(--text2); margin-bottom: 10px; }
+.cprice { font-size: 22px; font-weight: 800; font-family: 'DM Mono', monospace; color: var(--text); line-height: 1.1; }
+.cprice small { font-size: 11px; font-weight: 400; font-family: 'DM Sans', sans-serif; color: var(--text2); }
+.crows { margin-top: 10px; padding-top: 9px; border-top: 1px solid var(--surface2); }
+.cr { display: flex; justify-content: space-between; font-size: 11px; color: var(--text2); padding: 2.5px 0; }
+.cr b { color: var(--text); font-weight: 600; font-family: 'DM Mono', monospace; font-size: 11px; }
+.cr.st { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--border); }
+
+/* leasing special */
+.leas-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+.leas-note { font-size: 11px; color: var(--text2); background: var(--surface2); border-radius: var(--radius); padding: 8px 12px; margin-bottom: 10px; border: 1px solid var(--border); }
+
+/* rentabilité */
+.rentab-toggle { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12px; color: var(--text3); margin-top: 1.5rem; user-select: none; padding: 4px 0; }
+.rentab-toggle svg { transition: transform .2s; }
+.rentab-toggle.open svg { transform: rotate(90deg); }
+.rentab-block { display: none; margin-top: 10px; }
+.rentab-block.show { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px; }
+.rc { background: var(--surface2); border-radius: var(--radius); padding: 10px 12px; border: 1px solid var(--border); }
+.rl { font-size: 10px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 4px; }
+.rv { font-size: 14px; font-weight: 700; font-family: 'DM Mono', monospace; color: var(--text); }
+.rv small { font-size: 11px; font-weight: 400; font-family: 'DM Sans', sans-serif; color: var(--text2); }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-logo">Tessan</div>
+  <div class="tab active" onclick="showTab('checkup')">Borne Check-up</div>
+  <div class="tab" onclick="showTab('tc')">Borne TC</div>
+  <div class="tab" onclick="showTab('slim')">Cabine Slim / Uno</div>
+  <div class="tab" onclick="showTab('premium')">Cabine Premium</div>
+  <div class="tab tab-admin" onclick="openAdmin()"><span class="lock-icon">🔒</span> Admin</div>
+</nav>
+
+<!-- PIN OVERLAY -->
+<div class="pin-overlay" id="pin-overlay" style="display:none">
+  <div class="pin-box">
+    <h3>Accès Admin</h3>
+    <p>Code PIN requis</p>
+    <div class="pin-dots" id="pin-dots">
+      <div class="pin-dot" id="d0"></div>
+      <div class="pin-dot" id="d1"></div>
+      <div class="pin-dot" id="d2"></div>
+      <div class="pin-dot" id="d3"></div>
+    </div>
+    <div class="pin-pad">
+      <button class="pin-btn" onclick="pinDigit(1)">1</button>
+      <button class="pin-btn" onclick="pinDigit(2)">2</button>
+      <button class="pin-btn" onclick="pinDigit(3)">3</button>
+      <button class="pin-btn" onclick="pinDigit(4)">4</button>
+      <button class="pin-btn" onclick="pinDigit(5)">5</button>
+      <button class="pin-btn" onclick="pinDigit(6)">6</button>
+      <button class="pin-btn" onclick="pinDigit(7)">7</button>
+      <button class="pin-btn" onclick="pinDigit(8)">8</button>
+      <button class="pin-btn" onclick="pinDigit(9)">9</button>
+      <button class="pin-btn clear" onclick="pinClear()">⌫</button>
+      <button class="pin-btn" onclick="pinDigit(0)">0</button>
+      <button class="pin-btn clear" onclick="pinCancel()">✕</button>
+    </div>
+    <div class="pin-error" id="pin-error"></div>
+  </div>
+</div>
+
+<!-- ADMIN PAGE -->
+<div class="page" id="page-admin">
+  <div class="admin-header">
+    <h2>Configuration financière</h2>
+    <span class="admin-logout" onclick="logoutAdmin()">🔒 Verrouiller</span>
+  </div>
+
+  <div class="admin-section">
+    <div class="admin-section-title">Prix d'achat & CAC</div>
+    <div class="admin-grid" id="admin-achat-grid"></div>
+  </div>
+
+  <div class="admin-section">
+    <div class="admin-section-title">Leasing — frais & mensualités par défaut (M13+)</div>
+    <div class="admin-grid" id="admin-leas-grid"></div>
+  </div>
+
+  <div class="admin-section">
+    <div class="admin-section-title">Nombre de TC / mois — valeurs par défaut</div>
+    <div class="admin-grid" id="admin-tc-grid"></div>
+  </div>
+
+  <div class="admin-section">
+    <div class="admin-section-title">Seuils d'accord — par dispositif</div>
+    <div class="admin-grid" id="admin-seuils-grid"></div>
+  </div>
+
+  <div>
+    <button class="admin-save" onclick="saveAdmin()">Enregistrer les modifications</button>
+    <span class="save-ok" id="save-ok">✓ Sauvegardé</span>
+  </div>
+</div>
+
+<!-- DEVICE PAGES (generated by JS) -->
+<div class="page" id="page-checkup"></div>
+<div class="page" id="page-tc"></div>
+<div class="page" id="page-slim"></div>
+<div class="page" id="page-premium"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// CONFIG (modifiable via admin)
+// ═══════════════════════════════════════════════════════════════
+let CFG = {
+  pin: '1234',
+  devices: {
+    checkup: {
+      name: 'Borne Check-up', hasTC: false, hasTED: false, hasPrio: false,
+      abo: 59.99, achat60: 1870, achat48: 1870, cac60: 2500, cac48: 1866,
+      leasRate: 0.2, cashRate: 0.6,
+      mat60_1_12: 34.99, mat60_13: 34.99, maint60_1_12: 14.99, maint60_13: 14.99,
+      mat48_1_12: 59.99, mat48_13: 59.99, maint48_1_12: 14.99, maint48_13: 14.99,
+      tcDefault: 0, tedDefault: 0, prioDefault: 0,
+      seuilRentab60: 3.15, seuilRentab48: 3.15,
+      seuilCash60: 0.20, seuilCash48: 0.20,
+    },
+    tc: {
+      name: 'Borne TC', hasTC: true, hasTED: true, hasPrio: true,
+      abo: 79.99, achat60: 3910, achat48: 3910, cac60: 2300, cac48: 2300,
+      leasRate: 0.2, cashRate: 0.6,
+      mat60_1_12: 0, mat60_13: 49.99, maint60_1_12: 0, maint60_13: 29.99,
+      mat48_1_12: 0, mat48_13: 99.99, maint48_1_12: 0, maint48_13: 29.99,
+      tcDefault: 30, tedDefault: 49.99, prioDefault: 49.99,
+      seuilRentab60: 3.15, seuilRentab48: 3.15,
+      seuilCash60: 0.20, seuilCash48: 0.20,
+    },
+    slim: {
+      name: 'Cabine Slim / Uno', hasTC: true, hasTED: true, hasPrio: true,
+      abo: 79.99, achat60: 8200, achat48: 7800, cac60: 2300, cac48: 2300,
+      leasRate: 0.2, cashRate: 0.6,
+      mat60_1_12: 0, mat60_13: 119.99, maint60_1_12: 59.99, maint60_13: 59.99,
+      mat48_1_12: 59.99, mat48_13: 179.99, maint48_1_12: 39.99, maint48_13: 59.99,
+      tcDefault: 30, tedDefault: 49.99, prioDefault: 49.99,
+      seuilRentab60: 3.15, seuilRentab48: 3.15,
+      seuilCash60: 0.20, seuilCash48: 0.20,
+    },
+    premium: {
+      name: 'Cabine Premium', hasTC: true, hasTED: true, hasPrio: true,
+      abo: 79.99, achat60: 19470, achat48: 19470, cac60: 2300, cac48: 2300,
+      leasRate: 0.2, cashRate: 0.6,
+      mat60_1_12: 199.99, mat60_13: 299.99, maint60_1_12: 99.99, maint60_13: 99.99,
+      mat48_1_12: 299.99, mat48_13: 449.99, maint48_1_12: 99.99, maint48_13: 99.99,
+      tcDefault: 50, tedDefault: 49.99, prioDefault: 49.99,
+      seuilRentab60: 3.15, seuilRentab48: 3.15,
+      seuilCash60: 0.20, seuilCash48: 0.20,
+    }
+  }
+};
+
+// ═══════════════════════════════════════════════════════════════
+// STATE PER DEVICE
+// ═══════════════════════════════════════════════════════════════
+let STATE = {};
+['checkup','tc','slim','premium'].forEach(id => {
+  STATE[id] = { dur: 60, ted: false, prio: false, conv: false };
+});
+
+// ═══════════════════════════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════════════════════════
+function n(v) { return isNaN(v)||!isFinite(v)?0:+v; }
+function f(v) { return n(v).toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2})+'\u00a0€'; }
+function fm(v) { return f(v)+'/mois'; }
+function fp(v) { return (n(v)*100).toFixed(1)+'%'; }
+function g(id) { return document.getElementById(id); }
+function gv(id) { const el = g(id); return el ? n(parseFloat(el.value)) : 0; }
+
+// ═══════════════════════════════════════════════════════════════
+// TAB NAVIGATION
+// ═══════════════════════════════════════════════════════════════
+let adminUnlocked = false;
+function showTab(name) {
+  if (name === 'admin') {
+    if (!adminUnlocked) { openAdmin(); return; }
+  }
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  g('page-' + name).classList.add('active');
+  if (name !== 'admin') renderDevice(name);
+  else renderAdmin();
+}
+
+function openAdmin() {
+  if (adminUnlocked) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelector('.tab-admin').classList.add('active');
+    g('page-admin').classList.add('active');
+    renderAdmin();
+    return;
+  }
+  pinBuffer = '';
+  g('pin-overlay').style.display = 'flex';
+  updatePinDots();
+  g('pin-error').textContent = '';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PIN
+// ═══════════════════════════════════════════════════════════════
+let pinBuffer = '';
+function updatePinDots() {
+  for (let i = 0; i < 4; i++)
+    g('d'+i).classList.toggle('filled', i < pinBuffer.length);
+}
+function pinDigit(d) {
+  if (pinBuffer.length >= 4) return;
+  pinBuffer += d;
+  updatePinDots();
+  if (pinBuffer.length === 4) {
+    setTimeout(() => {
+      if (pinBuffer === CFG.pin) {
+        adminUnlocked = true;
+        g('pin-overlay').style.display = 'none';
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.querySelector('.tab-admin').classList.add('active');
+        g('page-admin').classList.add('active');
+        renderAdmin();
+      } else {
+        g('pin-error').textContent = 'Code incorrect';
+        pinBuffer = '';
+        updatePinDots();
+      }
+    }, 120);
+  }
+}
+function pinClear() { pinBuffer = pinBuffer.slice(0,-1); updatePinDots(); g('pin-error').textContent=''; }
+function pinCancel() { pinBuffer=''; g('pin-overlay').style.display='none'; updatePinDots(); }
+function logoutAdmin() { adminUnlocked=false; showTabDirect('checkup'); }
+function showTabDirect(name) {
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', ['checkup','tc','slim','premium'][i]===name));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  g('page-'+name).classList.add('active');
+  renderDevice(name);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ADMIN RENDER
+// ═══════════════════════════════════════════════════════════════
+const DEVS = ['checkup','tc','slim','premium'];
+const DEVNAMES = ['Borne Check-up','Borne TC','Cabine Slim/Uno','Cabine Premium'];
+
+function adminInput(id, val, unit='', step='1') {
+  return `<div class="admin-cell"><input id="ai_${id}" type="number" value="${val}" step="${step}"><span class="unit">${unit}</span></div>`;
+}
+function adminHeader() {
+  return '<div class="admin-col-header"></div>' + DEVNAMES.map(n=>`<div class="admin-col-header">${n}</div>`).join('');
+}
+
+function renderAdmin() {
+  // Achat & CAC
+  const achatRows = [
+    ['Prix d\'achat 60 mois','achat60','€','1'],
+    ['Prix d\'achat 48 mois','achat48','€','1'],
+    ['CAC 60 mois','cac60','€','1'],
+    ['CAC 48 mois','cac48','€','1'],
+    ['Frais de leasing','leasRate','%','0.01'],
+    ['Cash immédiat (%)','cashRate','%','0.01'],
+  ];
+  let h = adminHeader();
+  achatRows.forEach(([lbl,key,unit,step])=>{
+    h += `<div class="admin-row-label">${lbl}</div>`;
+    DEVS.forEach(d => h += adminInput(d+'_'+key, key.includes('Rate')?CFG.devices[d][key]:CFG.devices[d][key], unit, step));
+  });
+  g('admin-achat-grid').innerHTML = h;
+
+  // Leasing mensualités
+  const leasRows = [
+    ['Mat. 60m M1-12','mat60_1_12','€/mois','0.01'],
+    ['Mat. 60m M13+','mat60_13','€/mois','0.01'],
+    ['Maint. 60m M1-12','maint60_1_12','€/mois','0.01'],
+    ['Maint. 60m M13+','maint60_13','€/mois','0.01'],
+    ['Mat. 48m M1-12','mat48_1_12','€/mois','0.01'],
+    ['Mat. 48m M13+','mat48_13','€/mois','0.01'],
+    ['Maint. 48m M1-12','maint48_1_12','€/mois','0.01'],
+    ['Maint. 48m M13+','maint48_13','€/mois','0.01'],
+  ];
+  let h2 = adminHeader();
+  leasRows.forEach(([lbl,key,unit,step])=>{
+    h2 += `<div class="admin-row-label">${lbl}</div>`;
+    DEVS.forEach(d => h2 += adminInput(d+'_'+key, CFG.devices[d][key], unit, step));
+  });
+  g('admin-leas-grid').innerHTML = h2;
+
+  // TC defaults
+  const tcRows = [['TC/mois par défaut','tcDefault','cons.','1']];
+  let h3 = adminHeader();
+  tcRows.forEach(([lbl,key,unit,step])=>{
+    h3 += `<div class="admin-row-label">${lbl}</div>`;
+    DEVS.forEach(d => h3 += adminInput(d+'_'+key, CFG.devices[d][key], unit, step));
+  });
+  g('admin-tc-grid').innerHTML = h3;
+
+  // Seuils
+  const seuilRows = [
+    ['Rentabilité min 60m (×)','seuilRentab60','×','0.01'],
+    ['Rentabilité min 48m (×)','seuilRentab48','×','0.01'],
+    ['Marge cash min 60m (%)','seuilCash60','%','0.01'],
+    ['Marge cash min 48m (%)','seuilCash48','%','0.01'],
+  ];
+  let h4 = adminHeader();
+  seuilRows.forEach(([lbl,key,unit,step])=>{
+    h4 += `<div class="admin-row-label">${lbl}</div>`;
+    DEVS.forEach(d => h4 += adminInput(d+'_'+key, CFG.devices[d][key], unit, step));
+  });
+  g('admin-seuils-grid').innerHTML = h4;
+}
+
+function saveAdmin() {
+  const numKeys = ['achat60','achat48','cac60','cac48','leasRate','cashRate',
+    'mat60_1_12','mat60_13','maint60_1_12','maint60_13',
+    'mat48_1_12','mat48_13','maint48_1_12','maint48_13',
+    'tcDefault','seuilRentab60','seuilRentab48','seuilCash60','seuilCash48'];
+  DEVS.forEach(d => {
+    numKeys.forEach(k => {
+      const el = g('ai_'+d+'_'+k);
+      if (el) CFG.devices[d][k] = n(parseFloat(el.value));
+    });
+  });
+  const ok = g('save-ok');
+  ok.style.opacity = '1';
+  setTimeout(()=>ok.style.opacity='0', 2500);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DEVICE PAGE BUILDER
+// ═══════════════════════════════════════════════════════════════
+function buildDevicePage(devId) {
+  const cfg = CFG.devices[devId];
+  const s = STATE[devId];
+  const pg = g('page-'+devId);
+
+  const hasTED = cfg.hasTED;
+  const hasPrio = cfg.hasPrio;
+  const hasTC = cfg.hasTC;
+
+  pg.innerHTML = `
+    <div class="device-header">
+      <h2>${cfg.name}</h2>
+      <p>Renseignez les paramètres puis partagez l'écran avec le prospect</p>
+    </div>
+
+    <div class="dur-row">
+      <div class="dur-btn ${s.dur===60?'on':''}" onclick="setDur('${devId}',60)">60 mois</div>
+      <div class="dur-btn ${s.dur===48?'on':''}" onclick="setDur('${devId}',48)">48 mois</div>
+    </div>
+
+    <div class="params-card">
+      <div class="params-card-title">Paramètres du dossier</div>
+      <div class="pg2">
+        <div class="pf"><label>Abonnement Tessan</label><div class="pf-body"><input type="number" id="${devId}_abo" value="${cfg.abo}" step="0.01" oninput="renderDevice('${devId}')"><span class="unit">€/mois</span></div></div>
+        ${hasTC ? `<div class="pf"><label>Nb TC / mois</label><div class="pf-body"><input type="number" id="${devId}_tc" value="${cfg.tcDefault}" step="1" oninput="renderDevice('${devId}')"><span class="unit">cons.</span></div></div>` : '<div></div>'}
+      </div>
+      <div class="pg4">
+        <div class="pf"><label>Matériel HT</label><div class="pf-body"><input type="number" id="${devId}_mat" value="${cfg.achat60}" step="1" oninput="renderDevice('${devId}')"><span class="unit">€</span></div><div class="hint">Tarif : ${cfg.achat60.toLocaleString('fr-FR')} €</div></div>
+        <div class="pf"><label>Maintenance</label><div class="pf-body"><input type="number" id="${devId}_maint" value="${cfg.maint60_13}" step="0.01" oninput="renderDevice('${devId}')"><span class="unit">€/mois</span></div><div class="hint">Tarif : ${cfg.maint60_13} €</div></div>
+        ${hasTED ? `<div class="pf"><label>TED</label><div class="pf-body"><input type="number" id="${devId}_ted" value="${cfg.tedDefault}" step="0.01" oninput="renderDevice('${devId}')"><span class="unit">€/mois</span></div><div class="hint">Tarif : ${cfg.tedDefault} €</div></div>` : '<div></div>'}
+        ${hasPrio ? `<div class="pf"><label>Accès prioritaire</label><div class="pf-body"><input type="number" id="${devId}_prio" value="${cfg.prioDefault}" step="0.01" oninput="renderDevice('${devId}')"><span class="unit">€/mois</span></div><div class="hint">Tarif : ${cfg.prioDefault} €</div></div>` : '<div></div>'}
+      </div>
+      <div class="toggles">
+        ${hasTED ? `<div class="tog ${s.ted?'on':''}" id="${devId}_t_ted" onclick="togDev('${devId}','ted')"><span class="dot"></span>TED</div>` : ''}
+        ${hasPrio ? `<div class="tog ${s.prio?'on':''}" id="${devId}_t_prio" onclick="togDev('${devId}','prio')"><span class="dot"></span>Accès prioritaire</div>` : ''}
+        <div class="tog ${s.conv?'on':''}" id="${devId}_t_conv" onclick="togDev('${devId}','conv')"><span class="dot"></span>Conversion — <input class="conv-in" type="number" id="${devId}_conv" value="0" step="100" onclick="event.stopPropagation()" oninput="renderDevice('${devId}')"> €</div>
+        <div class="vsep"></div>
+        <div class="dur-btn ${s.dur===60?'on':''}" style="font-size:12px;padding:5px 14px" onclick="setDur('${devId}',60)">60 mois</div>
+        <div class="dur-btn ${s.dur===48?'on':''}" style="font-size:12px;padding:5px 14px" onclick="setDur('${devId}',48)">48 mois</div>
+      </div>
+      <div id="${devId}_accord"></div>
+    </div>
+
+    <div class="sec">Mixte — abonnement mensuel + matériel fractionné</div>
+    <div class="g2" id="${devId}_mix"></div>
+
+    <div class="sec">Paiement comptant</div>
+    <div class="g3" id="${devId}_cpt"></div>
+
+    <div class="sec">Leasing</div>
+    <div class="leas-controls">
+      <div class="pf"><label>Matériel M1–12 (€/mois)</label><div class="pf-body"><input type="number" id="${devId}_lm1" value="${s.dur===48?cfg.mat48_1_12:cfg.mat60_1_12}" step="0.01" oninput="renderDevice('${devId}')"><span class="unit">€/mois</span></div></div>
+      <div class="pf"><label>Maintenance M1–12 (€/mois)</label><div class="pf-body"><input type="number" id="${devId}_lmaint1" value="${s.dur===48?cfg.maint48_1_12:cfg.maint60_1_12}" step="0.01" oninput="renderDevice('${devId}')"><span class="unit">€/mois</span></div></div>
+    </div>
+    <div class="leas-note" id="${devId}_leas_note"></div>
+    <div class="g2" id="${devId}_leas"></div>
+
+    <div class="rentab-toggle" id="${devId}_rtog" onclick="togRentab('${devId}')">
+      <svg width="10" height="10" viewBox="0 0 10 10"><path d="M3 1.5l4 3.5-4 3.5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Rentabilité du dossier
+    </div>
+    <div class="rentab-block" id="${devId}_rentab"></div>
+    <div style="height:2rem"></div>
+  `;
+}
+
+function togDev(devId, key) {
+  STATE[devId][key] = !STATE[devId][key];
+  const el = g(devId+'_t_'+key);
+  if (el) el.classList.toggle('on', STATE[devId][key]);
+  renderDevice(devId);
+}
+function togRentab(devId) {
+  g(devId+'_rentab').classList.toggle('show');
+  g(devId+'_rtog').classList.toggle('open');
+}
+function setDur(devId, d) {
+  STATE[devId].dur = d;
+  buildDevicePage(devId);
+  renderDevice(devId);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// COMPUTE
+// ═══════════════════════════════════════════════════════════════
+function compute(devId) {
+  const cfg = CFG.devices[devId];
+  const s = STATE[devId];
+  const d = s.dur;
+  const rest = d === 60 ? 48 : 36;
+
+  const abo   = gv(devId+'_abo');
+  const mat   = gv(devId+'_mat');
+  const maint = gv(devId+'_maint');
+  const tc    = cfg.hasTC ? gv(devId+'_tc') : 0;
+  const ted   = (cfg.hasTED && s.ted) ? gv(devId+'_ted') : 0;
+  const prio  = (cfg.hasPrio && s.prio) ? gv(devId+'_prio') : 0;
+  const conv  = s.conv ? gv(devId+'_conv') : 0;
+  const opts  = ted + prio;
+
+  const achat = d===60 ? cfg.achat60 : cfg.achat48;
+  const cac   = d===60 ? cfg.cac60   : cfg.cac48;
+  const LR    = cfg.leasRate;
+  const CR    = cfg.cashRate;
+
+  // Leasing — mensualités M1-12 saisies par le sales
+  const lm1   = gv(devId+'_lm1');      // mat M1-12
+  const lmnt1 = gv(devId+'_lmaint1');  // maint M1-12
+  // M13+ par défaut config
+  const lm13  = d===60 ? cfg.mat60_13   : cfg.mat48_13;
+  const lmnt13= d===60 ? cfg.maint60_13 : cfg.maint48_13;
+
+  // Total leasing sur durée
+  const l_mat_tot  = lm1*12 + lm13*rest;
+  const l_mnt_tot  = lmnt1*12 + lmnt13*rest;
+  const l_fin      = l_mat_tot + l_mnt_tot;
+  const l_frais    = l_fin * LR;
+  const l_cout     = l_fin + l_frais;
+  const l_mens_deb = abo + opts;
+  const l_mens_ful = abo + lm13 + lmnt13 + opts;
+  const abo_tot    = abo * d;
+  const opts_tot   = opts * d;
+  const l_tot      = abo_tot + l_cout + opts_tot + conv;
+  const l_cash     = l_cout * CR;
+
+  // Comptant — remise 10% sur (mat+maint)
+  const cpt_mm   = (mat + maint) * 0.9;
+  const cpt_base = abo_tot + cpt_mm + conv;
+  const cpt_tot  = cpt_base + opts_tot;
+  const x3 = cpt_base / 3;
+  const x4 = cpt_base / 4;
+
+  // Mixte
+  const mix_base = mat + maint + conv;
+  const mix3 = mix_base / 3;
+  const mix4 = mix_base / 4;
+
+  // Rentabilité
+  const ltv = cfg.hasTC ? tc * 7 * d : 0;
+  const ca  = l_tot + ltv;
+  const total_couts = achat + cac + conv + l_fin * LR;
+  const ebitda = (abo_tot + l_mat_tot + l_mnt_tot + ltv) - total_couts;
+  const rentab = total_couts > 0 ? ca / total_couts : 0;
+  const marge_cash = achat > 0 ? (l_cash - achat) / achat : 0;
+
+  const seuilR = d===60 ? cfg.seuilRentab60 : cfg.seuilRentab48;
+  const seuilC = d===60 ? cfg.seuilCash60   : cfg.seuilCash48;
+  const okAchat  = rentab >= seuilR;
+  const okLeas   = marge_cash >= seuilC;
+
+  return {abo,mat,maint,tc,ted,prio,conv,opts,d,rest,achat,cac,LR,CR,
+    l_mat_tot,l_mnt_tot,l_fin,l_frais,l_cout,l_mens_deb,l_mens_ful,
+    abo_tot,opts_tot,l_tot,l_cash,lm1,lmnt1,lm13,lmnt13,
+    cpt_mm,cpt_base,cpt_tot,x3,x4,mix_base,mix3,mix4,
+    ltv,ca,total_couts,ebitda,rentab,marge_cash,okAchat,okLeas,
+    seuilR,seuilC};
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RENDER DEVICE
+// ═══════════════════════════════════════════════════════════════
+function renderDevice(devId) {
+  const cfg = CFG.devices[devId];
+  const v = compute(devId);
+
+  // Accord
+  let acls, atxt, tags;
+  if (v.okAchat && v.okLeas) {
+    acls='ok'; atxt='Accord achat direct / Accord leasing';
+    tags=`<span class="accord-tag">✓ Achat direct</span><span class="accord-tag">✓ Leasing</span>`;
+  } else if (v.okAchat && !v.okLeas) {
+    acls='warn'; atxt='Accord achat direct / Refus leasing';
+    tags=`<span class="accord-tag">✓ Achat direct</span><span class="accord-tag">✗ Leasing</span>`;
+  } else {
+    acls='ko'; atxt='Refus achat direct / Refus leasing';
+    tags=`<span class="accord-tag">✗ Achat direct</span><span class="accord-tag">✗ Leasing</span>`;
+  }
+  g(devId+'_accord').innerHTML=`<div class="accord ${acls}"><div class="accord-dot"></div><div class="accord-main">${atxt}</div><div class="accord-detail">${tags}</div></div>`;
+
+  // Mixte
+  g(devId+'_mix').innerHTML=`
+    <div class="card star">
+      <div class="badge">Recommandé</div>
+      <div class="ctitle">Mixte — Comptant</div>
+      <div class="csub">Abonnement mensuel prélevé + règlement immédiat</div>
+      <div class="cprice">${fm(v.abo)}<small> + ${f(v.mix_base)}</small></div>
+      <div class="crows">
+        <div class="cr"><span>Abonnement Tessan</span><b>${fm(v.abo)}</b></div>
+        <div class="cr"><span>Matériel HT</span><b>${f(v.mat)}</b></div>
+        <div class="cr"><span>Maintenance</span><b>${f(v.maint)}</b></div>
+        ${v.conv?`<div class="cr"><span>Conversion</span><b>${f(v.conv)}</b></div>`:''}
+        ${v.ted?`<div class="cr"><span>TED</span><b>${fm(v.ted)}</b></div>`:''}
+        ${v.prio?`<div class="cr"><span>Accès prioritaire</span><b>${fm(v.prio)}</b></div>`:''}
+      </div>
+    </div>
+    <div class="card">
+      <div class="ctitle">Mixte 3×</div>
+      <div class="csub">Abonnement mensuel + matériel en 3 fois</div>
+      <div class="cprice">${fm(v.abo)}<small> + ${f(v.mix3)} × 3</small></div>
+      <div class="crows">
+        <div class="cr"><span>Abonnement mensuel</span><b>${fm(v.abo)}</b></div>
+        <div class="cr"><span>Versement commande</span><b>${f(v.mix3)}</b></div>
+        <div class="cr"><span>Versement livraison</span><b>${f(v.mix3)}</b></div>
+        <div class="cr"><span>M+1</span><b>${f(v.mix3)}</b></div>
+        <div class="cr st"><span>Mat. + maintenance${v.conv?' + conversion':''}</span><b>${f(v.mix_base)}</b></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ctitle">Mixte 4×</div>
+      <div class="csub">Abonnement mensuel + matériel en 4 fois</div>
+      <div class="cprice">${fm(v.abo)}<small> + ${f(v.mix4)} × 4</small></div>
+      <div class="crows">
+        <div class="cr"><span>Abonnement mensuel</span><b>${fm(v.abo)}</b></div>
+        <div class="cr"><span>Versement commande</span><b>${f(v.mix4)}</b></div>
+        <div class="cr"><span>Versement livraison</span><b>${f(v.mix4)}</b></div>
+        <div class="cr"><span>M+1</span><b>${f(v.mix4)}</b></div>
+        <div class="cr"><span>M+2</span><b>${f(v.mix4)}</b></div>
+        <div class="cr st"><span>Mat. + maintenance${v.conv?' + conversion':''}</span><b>${f(v.mix_base)}</b></div>
+      </div>
+    </div>`;
+
+  // Comptant
+  g(devId+'_cpt').innerHTML=`
+    <div class="card star">
+      <div class="badge">Recommandé</div>
+      <div class="ctitle">Comptant</div>
+      <div class="csub">Règlement unique · remise −10% matériel</div>
+      <div class="cprice">${f(v.cpt_tot)}</div>
+      <div class="crows">
+        <div class="cr"><span>Abonnement (${v.d} mois)</span><b>${f(v.abo_tot)}</b></div>
+        <div class="cr"><span>Matériel + maintenance (−10%)</span><b>${f(v.cpt_mm)}</b></div>
+        ${v.conv?`<div class="cr"><span>Conversion</span><b>${f(v.conv)}</b></div>`:''}
+        ${v.ted?`<div class="cr"><span>TED (${v.d} mois)</span><b>${f(v.ted*v.d)}</b></div>`:''}
+        ${v.prio?`<div class="cr"><span>Accès prioritaire (${v.d} mois)</span><b>${f(v.prio*v.d)}</b></div>`:''}
+      </div>
+    </div>
+    <div class="card">
+      <div class="ctitle">3× sans frais</div>
+      <div class="csub">3 versements égaux</div>
+      <div class="cprice">${f(v.x3)}<small> × 3</small></div>
+      <div class="crows">
+        <div class="cr"><span>Abonnement (${v.d} mois)</span><b>${f(v.abo_tot)}</b></div>
+        <div class="cr"><span>Matériel + maintenance (−10%)</span><b>${f(v.cpt_mm)}</b></div>
+        ${v.conv?`<div class="cr"><span>Conversion</span><b>${f(v.conv)}</b></div>`:''}
+        <div class="cr st"><span>Versement commande</span><b>${f(v.x3)}</b></div>
+        <div class="cr"><span>Versement livraison</span><b>${f(v.x3)}</b></div>
+        <div class="cr"><span>M+1</span><b>${f(v.x3)}</b></div>
+        <div class="cr st"><span>Total</span><b>${f(v.cpt_base)}</b></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ctitle">4× sans frais</div>
+      <div class="csub">4 versements égaux</div>
+      <div class="cprice">${f(v.x4)}<small> × 4</small></div>
+      <div class="crows">
+        <div class="cr"><span>Abonnement (${v.d} mois)</span><b>${f(v.abo_tot)}</b></div>
+        <div class="cr"><span>Matériel + maintenance (−10%)</span><b>${f(v.cpt_mm)}</b></div>
+        ${v.conv?`<div class="cr"><span>Conversion</span><b>${f(v.conv)}</b></div>`:''}
+        <div class="cr st"><span>Versement commande</span><b>${f(v.x4)}</b></div>
+        <div class="cr"><span>Versement livraison</span><b>${f(v.x4)}</b></div>
+        <div class="cr"><span>M+1</span><b>${f(v.x4)}</b></div>
+        <div class="cr"><span>M+2</span><b>${f(v.x4)}</b></div>
+        <div class="cr st"><span>Total</span><b>${f(v.cpt_base)}</b></div>
+      </div>
+    </div>`;
+
+  // Leasing note
+  g(devId+'_leas_note').innerHTML=`Les mensualités M13–${v.d} se calculent automatiquement selon la configuration admin. Jouez sur M1–12 pour offrir une période de lancement.`;
+
+  // Leasing
+  g(devId+'_leas').innerHTML=`
+    <div class="card">
+      <div class="ctitle">Leasing ${v.d} mois — mensualités</div>
+      <div class="csub">Abonnement + matériel + maintenance</div>
+      <div class="cprice">${fm(v.l_mens_ful)}<small> à partir de M13</small></div>
+      <div class="crows">
+        <div class="cr"><span>Mois 1–12</span><b>${fm(v.l_mens_deb)}</b></div>
+        <div class="cr"><span>Abonnement Tessan</span><b>${fm(v.abo)}</b></div>
+        <div class="cr"><span>Matériel M1–12</span><b>${fm(v.lm1)}</b></div>
+        <div class="cr"><span>Matériel M13–${v.d}</span><b>${fm(v.lm13)}</b></div>
+        <div class="cr"><span>Maintenance M1–12</span><b>${fm(v.lmnt1)}</b></div>
+        <div class="cr"><span>Maintenance M13–${v.d}</span><b>${fm(v.lmnt13)}</b></div>
+        ${v.ted?`<div class="cr"><span>TED</span><b>${fm(v.ted)}</b></div>`:''}
+        ${v.prio?`<div class="cr"><span>Accès prioritaire</span><b>${fm(v.prio)}</b></div>`:''}
+        <div class="cr st"><span>Coût total ${v.d} mois</span><b>${f(v.l_tot)}</b></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ctitle">Leasing ${v.d} mois — financement</div>
+      <div class="csub">Décomposition du financement matériel</div>
+      <div class="cprice">${f(v.l_fin)}<small> financé</small></div>
+      <div class="crows">
+        <div class="cr"><span>Matériel total en leasing</span><b>${f(v.l_mat_tot)}</b></div>
+        <div class="cr"><span>Maintenance totale en leasing</span><b>${f(v.l_mnt_tot)}</b></div>
+        <div class="cr st"><span>Frais de leasing (${(v.LR*100).toFixed(0)}%)</span><b>${f(v.l_frais)}</b></div>
+        <div class="cr"><span>Total à financer</span><b>${f(v.l_cout)}</b></div>
+        <div class="cr st"><span>Cash immédiat Tessan (${(v.CR*100).toFixed(0)}%)</span><b>${f(v.l_cash)}</b></div>
+      </div>
+    </div>`;
+
+  // Rentabilité
+  const rb = v.rentab >= v.seuilR
+    ? `<span style="font-size:11px;background:var(--green-bg);color:var(--green);padding:2px 8px;border-radius:99px">${v.rentab.toFixed(2)}× ✓</span>`
+    : `<span style="font-size:11px;background:var(--red-bg);color:var(--red);padding:2px 8px;border-radius:99px">${v.rentab.toFixed(2)}× ✗</span>`;
+  const fb = v.marge_cash >= v.seuilC
+    ? `<span style="font-size:11px;background:var(--green-bg);color:var(--green);padding:2px 8px;border-radius:99px">${fp(v.marge_cash)} ✓</span>`
+    : `<span style="font-size:11px;background:var(--red-bg);color:var(--red);padding:2px 8px;border-radius:99px">${fp(v.marge_cash)} ✗</span>`;
+
+  g(devId+'_rentab').innerHTML=`
+    <div class="rc"><div class="rl">CA total</div><div class="rv">${f(v.ca)}</div></div>
+    <div class="rc"><div class="rl">Total coûts</div><div class="rv">${f(v.total_couts)}</div></div>
+    <div class="rc"><div class="rl">EBITDA</div><div class="rv">${f(v.ebitda)}</div></div>
+    ${cfg.hasTC?`<div class="rc"><div class="rl">LTV TC (${v.tc}×7€×${v.d})</div><div class="rv">${f(v.ltv)}</div></div>`:''}
+    <div class="rc"><div class="rl">Marge brute</div><div class="rv">${f(v.ca - v.achat)}</div></div>
+    <div class="rc"><div class="rl">Rentabilité (seuil ${v.seuilR.toFixed(2)}×)</div><div class="rv">${rb}</div></div>
+    <div class="rc"><div class="rl">Marge cash (seuil ${fp(v.seuilC)})</div><div class="rv">${fb}</div></div>
+    <div class="rc"><div class="rl">Cash immédiat</div><div class="rv">${f(v.l_cash)}</div></div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════
+['checkup','tc','slim','premium'].forEach(id => buildDevicePage(id));
+renderDevice('checkup');
+g('page-checkup').classList.add('active');
+document.querySelector('.tab').classList.add('active');
+</script>
+</body>
+</html>
