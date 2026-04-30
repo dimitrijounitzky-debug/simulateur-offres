@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulateur commercial — Borne TC</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f5f5f4;color:#111;min-height:100vh;padding:2rem 1rem}
+.wrap{max-width:800px;margin:0 auto}
+h1{font-size:20px;font-weight:700;color:#111;margin-bottom:4px}
+.sub{font-size:13px;color:#777;margin-bottom:1.5rem}
+
+.card-wrap{background:#fff;border-radius:14px;border:1px solid #e8e8e8;padding:1.5rem;margin-bottom:1.25rem}
+
+.param-grid{display:grid;gap:10px;margin-bottom:10px}
+.row-2{grid-template-columns:1fr 1fr}
+.row-4{grid-template-columns:1fr 1fr 1fr 1fr}
+
+.pg{background:#f8f8f7;border-radius:9px;padding:11px 13px;display:flex;flex-direction:column;gap:6px;border:1px solid #ebebea}
+.pg label{font-size:10px;font-weight:600;color:#999;text-transform:uppercase;letter-spacing:.05em}
+.pg-body{display:flex;align-items:baseline;gap:5px}
+.pg-body input{flex:1;min-width:0;font-size:16px;font-weight:700;color:#111;background:transparent;border:none;border-bottom:1.5px solid #ddd;outline:none;padding:1px 0 3px}
+.pg-body input:focus{border-bottom-color:#2563eb}
+.pg-body .unit{font-size:12px;color:#aaa;flex-shrink:0;white-space:nowrap}
+.pg .hint{font-size:10px;color:#bbb}
+
+.toggles{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-bottom:1.25rem;padding-top:4px}
+.tog{cursor:pointer;font-size:12px;padding:6px 13px;border-radius:99px;border:1.5px solid #e0e0e0;background:#fff;color:#777;transition:all .15s;user-select:none;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.tog .dot{width:7px;height:7px;border-radius:50%;background:#ddd;flex-shrink:0;transition:background .15s}
+.tog.on{background:#eff6ff;border-color:#2563eb;color:#1d4ed8}
+.tog.on .dot{background:#2563eb}
+.conv-in{width:66px;font-size:12px;font-weight:700;border:none;border-bottom:1px solid currentColor;background:transparent;outline:none;color:inherit;padding:0 0 1px;opacity:.8}
+.vsep{width:1px;height:22px;background:#e8e8e8;margin:0 3px;flex-shrink:0}
+.dur-tog{cursor:pointer;font-size:12px;font-weight:500;padding:6px 16px;border-radius:99px;border:1.5px solid #e0e0e0;background:#fff;color:#777;user-select:none;transition:all .15s;white-space:nowrap}
+.dur-tog.on{background:#1d4ed8;color:#fff;border-color:#1d4ed8}
+
+.accord{display:flex;align-items:center;gap:10px;padding:11px 15px;border-radius:10px;margin-bottom:0;border:1.5px solid}
+.accord.ok{background:#f0fdf4;border-color:#16a34a}
+.accord.warn{background:#fffbeb;border-color:#d97706}
+.accord.ko{background:#fef2f2;border-color:#dc2626}
+.accord-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.accord.ok .accord-dot{background:#16a34a}
+.accord.warn .accord-dot{background:#d97706}
+.accord.ko .accord-dot{background:#dc2626}
+.accord-txt{font-size:13px;font-weight:700}
+.accord.ok .accord-txt{color:#15803d}
+.accord.warn .accord-txt{color:#b45309}
+.accord.ko .accord-txt{color:#b91c1c}
+.accord-sub{font-size:12px;margin-left:auto;white-space:nowrap}
+.accord.ok .accord-sub{color:#15803d}
+.accord.warn .accord-sub{color:#b45309}
+.accord.ko .accord-sub{color:#b91c1c}
+
+.sec{font-size:11px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;margin-top:1.5rem;padding-bottom:6px;border-bottom:1px solid #ebebea}
+.g3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.g2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+
+.card{background:#fff;border:1.5px solid #e8e8e8;border-radius:13px;padding:16px}
+.card.star{border-color:#2563eb;border-width:2px}
+.badge{font-size:10px;font-weight:700;background:#eff6ff;color:#1d4ed8;padding:3px 10px;border-radius:99px;display:inline-block;margin-bottom:9px;letter-spacing:.02em}
+.ctitle{font-size:13px;font-weight:700;color:#111;margin-bottom:2px}
+.csub{font-size:11px;color:#999;margin-bottom:10px}
+.cprice{font-size:23px;font-weight:800;color:#111;line-height:1.1}
+.cprice small{font-size:12px;font-weight:400;color:#999}
+.crows{margin-top:11px;padding-top:9px;border-top:1px solid #f0f0f0}
+.cr{display:flex;justify-content:space-between;font-size:11px;color:#999;padding:2.5px 0}
+.cr b{color:#333;font-weight:600}
+.cr.st{margin-top:7px;padding-top:7px;border-top:1px solid #f0f0f0}
+
+.rfooter{margin-top:1.5rem}
+.rtoggle{display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:#aaa;user-select:none;padding:4px 0}
+.rtoggle svg{transition:transform .2s}
+.rtoggle.open svg{transform:rotate(90deg)}
+.rblock{display:none;margin-top:10px}
+.rblock.show{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.rc{background:#f8f8f7;border-radius:9px;padding:11px 13px;border:1px solid #ebebea}
+.rl{font-size:11px;color:#aaa;margin-bottom:4px}
+.rv{font-size:14px;font-weight:700;color:#111}
+.ok-b{font-size:11px;font-weight:600;background:#f0fdf4;color:#15803d;padding:2px 8px;border-radius:99px;display:inline-block}
+.warn-b{font-size:11px;font-weight:600;background:#fffbeb;color:#b45309;padding:2px 8px;border-radius:99px;display:inline-block}
+.ko-b{font-size:11px;font-weight:600;background:#fef2f2;color:#b91c1c;padding:2px 8px;border-radius:99px;display:inline-block}
+
+@media(max-width:620px){
+  .row-4{grid-template-columns:1fr 1fr}
+  .g3{grid-template-columns:1fr}
+  .g2{grid-template-columns:1fr}
+  .accord-sub{display:none}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card-wrap">
+    <h1>Simulateur commercial — Borne TC</h1>
+    <p class="sub">Renseignez les paramètres et partagez l'écran avec le prospect</p>
+
+    <div class="param-grid row-2">
+      <div class="pg">
+        <label>Abonnement Tessan</label>
+        <div class="pg-body">
+          <input type="number" id="abo" value="79.99" step="0.01">
+          <span class="unit">€ / mois</span>
+        </div>
+      </div>
+      <div class="pg">
+        <label>Nb consultations TC / mois</label>
+        <div class="pg-body">
+          <input type="number" id="tc" value="30" step="1">
+          <span class="unit">cons.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="param-grid row-4">
+      <div class="pg">
+        <label>Matériel HT</label>
+        <div class="pg-body">
+          <input type="number" id="mat" value="2639.47" step="1">
+          <span class="unit">€</span>
+        </div>
+        <span class="hint">Tarif : 2 639,47 €</span>
+      </div>
+      <div class="pg">
+        <label>Maintenance</label>
+        <div class="pg-body">
+          <input type="number" id="maint-val" value="29.99" step="0.01">
+          <span class="unit">€ / mois</span>
+        </div>
+        <span class="hint">Tarif : 29,99 €</span>
+      </div>
+      <div class="pg">
+        <label>TED</label>
+        <div class="pg-body">
+          <input type="number" id="ted-val" value="49.99" step="0.01">
+          <span class="unit">€ / mois</span>
+        </div>
+        <span class="hint">Tarif : 49,99 €</span>
+      </div>
+      <div class="pg">
+        <label>Accès prioritaire</label>
+        <div class="pg-body">
+          <input type="number" id="prio-val" value="49.99" step="0.01">
+          <span class="unit">€ / mois</span>
+        </div>
+        <span class="hint">Tarif : 49,99 €</span>
+      </div>
+    </div>
+
+    <div class="toggles">
+      <div class="tog" id="t-ted" onclick="tog('ted')"><span class="dot"></span>TED</div>
+      <div class="tog" id="t-prio" onclick="tog('prio')"><span class="dot"></span>Accès prioritaire</div>
+      <div class="tog" id="t-conv" onclick="tog('conv')">
+        <span class="dot"></span>
+        Conversion —&nbsp;<input class="conv-in" type="number" id="conv-val" value="0" step="100" onclick="event.stopPropagation()" oninput="render()">&nbsp;€
+      </div>
+      <div class="vsep"></div>
+      <div class="dur-tog on" id="d60" onclick="setDur(60)">60 mois</div>
+      <div class="dur-tog" id="d48" onclick="setDur(48)">48 mois</div>
+    </div>
+
+    <div id="accord-block"></div>
+  </div>
+
+  <div class="sec">Mixte — abonnement mensuel + matériel fractionné</div>
+  <div class="g2" id="cards-mix"></div>
+
+  <div class="sec">Paiement comptant</div>
+  <div class="g3" id="cards-cpt"></div>
+
+  <div class="sec">Leasing</div>
+  <div class="g2" id="cards-leas"></div>
+
+  <div class="rfooter">
+    <div class="rtoggle" id="rtog" onclick="toggleR()">
+      <svg width="10" height="10" viewBox="0 0 10 10"><path d="M3 1.5l4 3.5-4 3.5" stroke="#bbb" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Rentabilité du dossier
+    </div>
+    <div class="rblock" id="rblock"></div>
+  </div>
+
+  <div style="height:2rem"></div>
+</div>
+
+<script>
+const ACHAT=3910,CAC=2300,LR=0.2;
+const L_MAT_60=49.99,L_MAT_48=99.99;
+let state={ted:false,prio:false,conv:false,dur:60};
+
+function tog(k){state[k]=!state[k];document.getElementById('t-'+k).classList.toggle('on',state[k]);render();}
+function setDur(d){state.dur=d;document.getElementById('d60').classList.toggle('on',d===60);document.getElementById('d48').classList.toggle('on',d===48);render();}
+function toggleR(){document.getElementById('rblock').classList.toggle('show');document.getElementById('rtog').classList.toggle('open');}
+function n(v){return isNaN(v)||!isFinite(v)?0:v}
+function f(v){return n(v).toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2})+'\u00a0€'}
+function fm(v){return f(v)+'\u00a0€/mois'}
+
+function compute(){
+  const abo=n(parseFloat(document.getElementById('abo').value));
+  const mat=n(parseFloat(document.getElementById('mat').value));
+  const tc=n(parseFloat(document.getElementById('tc').value));
+  const maint=n(parseFloat(document.getElementById('maint-val').value));
+  const ted_p=n(parseFloat(document.getElementById('ted-val').value));
+  const prio_p=n(parseFloat(document.getElementById('prio-val').value));
+  const convv=state.conv?n(parseFloat(document.getElementById('conv-val').value)):0;
+  const d=state.dur,rest=d===60?48:36;
+  const ted=state.ted?ted_p:0,prio=state.prio?prio_p:0,opts=ted+prio;
+
+  const cpt_mat_maint=(mat+maint)*0.9;
+  const abo_tot=abo*d,opts_tot=opts*d;
+  const cpt_base=abo_tot+cpt_mat_maint;
+  const cpt_tot=cpt_base+opts_tot;
+  const x3=cpt_base/3,x4=cpt_base/4;
+
+  const mix_base=mat+maint,mix3=mix_base/3,mix4=mix_base/4;
+
+  const lm=d===60?L_MAT_60:L_MAT_48;
+  const l_mat_tot=lm*rest,l_mnt_tot=maint*rest;
+  const l_fin=l_mat_tot+l_mnt_tot;
+  const l_frais=l_fin*LR,l_cout=l_fin+l_frais;
+  const l_mens_debut=abo+opts,l_mens_full=abo+lm+maint+opts;
+  const l_tot=abo_tot+l_cout+opts_tot,l_cash=l_cout*0.6;
+
+  const ltv=tc*7*d,ca=l_tot+ltv;
+  const total_couts=ACHAT+CAC+convv+l_fin*LR;
+  const ebitda=(abo_tot+l_mat_tot+l_mnt_tot+ltv)-total_couts;
+  const rentab=total_couts>0?ca/total_couts:0;
+  const marge_cash=ACHAT>0?(l_cash-ACHAT)/ACHAT:0;
+
+  return{abo,mat,tc,maint,ted_p,prio_p,convv,d,rest,opts,ted,prio,
+    abo_tot,opts_tot,cpt_mat_maint,cpt_base,cpt_tot,x3,x4,
+    mix_base,mix3,mix4,lm,l_mat_tot,l_mnt_tot,l_fin,l_frais,l_cout,
+    l_tot,l_cash,l_mens_debut,l_mens_full,ltv,ca,total_couts,ebitda,rentab,marge_cash};
+}
+
+function render(){
+  const v=compute();
+
+  let acls,atxt,asub;
+  if(v.rentab>=1&&v.marge_cash>=0){acls='ok';atxt='Dossier validé';asub='Rentabilité '+v.rentab.toFixed(2)+'× · Leasing finançable';}
+  else if(v.rentab>=1){acls='warn';atxt='Dossier sous conditions';asub='Rentabilité '+v.rentab.toFixed(2)+'× · Leasing non finançable';}
+  else{acls='ko';atxt='Dossier à risque';asub='Rentabilité '+v.rentab.toFixed(2)+'× · Revoir les paramètres';}
+  document.getElementById('accord-block').innerHTML='<div class="accord '+acls+'"><div class="accord-dot"></div><div class="accord-txt">'+atxt+'</div><div class="accord-sub">'+asub+'</div></div>';
+
+  document.getElementById('cards-mix').innerHTML=
+    '<div class="card star"><div class="badge">Recommandé</div><div class="ctitle">Mixte 3×</div><div class="csub">Abonnement prélevé + matériel en 3 fois</div><div class="cprice">'+fm(v.abo)+'<small> + '+f(v.mix3)+' × 3</small></div><div class="crows"><div class="cr"><span>Abonnement mensuel</span><b>'+fm(v.abo)+'</b></div><div class="cr"><span>Versement commande</span><b>'+f(v.mix3)+'</b></div><div class="cr"><span>Versement livraison</span><b>'+f(v.mix3)+'</b></div><div class="cr"><span>M+1</span><b>'+f(v.mix3)+'</b></div><div class="cr st"><span>Mat. + maintenance</span><b>'+f(v.mix_base)+'</b></div></div></div>'+
+    '<div class="card"><div class="ctitle">Mixte 4×</div><div class="csub">Abonnement prélevé + matériel en 4 fois</div><div class="cprice">'+fm(v.abo)+'<small> + '+f(v.mix4)+' × 4</small></div><div class="crows"><div class="cr"><span>Abonnement mensuel</span><b>'+fm(v.abo)+'</b></div><div class="cr"><span>Versement commande</span><b>'+f(v.mix4)+'</b></div><div class="cr"><span>Versement livraison</span><b>'+f(v.mix4)+'</b></div><div class="cr"><span>M+1</span><b>'+f(v.mix4)+'</b></div><div class="cr"><span>M+2</span><b>'+f(v.mix4)+'</b></div><div class="cr st"><span>Mat. + maintenance</span><b>'+f(v.mix_base)+'</b></div></div></div>';
+
+  document.getElementById('cards-cpt').innerHTML=
+    '<div class="card star"><div class="badge">Recommandé</div><div class="ctitle">Comptant</div><div class="csub">Règlement unique · remise −10%</div><div class="cprice">'+f(v.cpt_tot)+'</div><div class="crows"><div class="cr"><span>Abonnement ('+v.d+' mois)</span><b>'+f(v.abo_tot)+'</b></div><div class="cr"><span>Matériel + maintenance (−10%)</span><b>'+f(v.cpt_mat_maint)+'</b></div>'+(v.ted?'<div class="cr"><span>TED ('+v.d+' mois)</span><b>'+f(v.ted*v.d)+'</b></div>':'')+(v.prio?'<div class="cr"><span>Accès prioritaire ('+v.d+' mois)</span><b>'+f(v.prio*v.d)+'</b></div>':'')+'</div></div>'+
+    '<div class="card"><div class="ctitle">3× sans frais</div><div class="csub">3 versements égaux</div><div class="cprice">'+f(v.x3)+'<small> × 3</small></div><div class="crows"><div class="cr"><span>À la commande</span><b>'+f(v.x3)+'</b></div><div class="cr"><span>À la livraison</span><b>'+f(v.x3)+'</b></div><div class="cr"><span>M+1</span><b>'+f(v.x3)+'</b></div><div class="cr st"><span>Total</span><b>'+f(v.cpt_base)+'</b></div></div></div>'+
+    '<div class="card"><div class="ctitle">4× sans frais</div><div class="csub">4 versements égaux</div><div class="cprice">'+f(v.x4)+'<small> × 4</small></div><div class="crows"><div class="cr"><span>À la commande</span><b>'+f(v.x4)+'</b></div><div class="cr"><span>À la livraison</span><b>'+f(v.x4)+'</b></div><div class="cr"><span>M+1</span><b>'+f(v.x4)+'</b></div><div class="cr"><span>M+2</span><b>'+f(v.x4)+'</b></div><div class="cr st"><span>Total</span><b>'+f(v.cpt_base)+'</b></div></div></div>';
+
+  document.getElementById('cards-leas').innerHTML=
+    '<div class="card"><div class="ctitle">Leasing '+v.d+' mois — mensualité</div><div class="csub">Mois 1–12 : matériel offert</div><div class="cprice">'+fm(v.l_mens_full)+'<small> à partir de M13</small></div><div class="crows"><div class="cr"><span>Mois 1–12</span><b>'+fm(v.l_mens_debut)+'</b></div><div class="cr"><span>Abonnement Tessan</span><b>'+fm(v.abo)+'</b></div><div class="cr"><span>Matériel (M13–'+v.d+')</span><b>'+fm(v.lm)+'</b></div><div class="cr"><span>Maintenance</span><b>'+fm(v.maint)+'</b></div>'+(v.ted?'<div class="cr"><span>TED</span><b>'+fm(v.ted_p)+'</b></div>':'')+(v.prio?'<div class="cr"><span>Accès prioritaire</span><b>'+fm(v.prio_p)+'</b></div>':'')+'<div class="cr st"><span>Coût total '+v.d+' mois</span><b>'+f(v.l_tot)+'</b></div></div></div>'+
+    '<div class="card"><div class="ctitle">Leasing '+v.d+' mois — financement</div><div class="csub">Décomposition du financement matériel</div><div class="cprice">'+f(v.l_fin)+'<small> financé</small></div><div class="crows"><div class="cr"><span>Matériel en leasing</span><b>'+f(v.l_mat_tot)+'</b></div><div class="cr"><span>Maintenance en leasing</span><b>'+f(v.l_mnt_tot)+'</b></div><div class="cr st"><span>Frais de leasing (20%)</span><b>'+f(v.l_frais)+'</b></div><div class="cr"><span>Coût total à financer</span><b>'+f(v.l_cout)+'</b></div><div class="cr st"><span>Cash immédiat Tessan (60%)</span><b>'+f(v.l_cash)+'</b></div></div></div>';
+
+  var rb=v.rentab>=2?'<span class="ok-b">'+v.rentab.toFixed(2)+'× — Bon dossier</span>':v.rentab>=1?'<span class="warn-b">'+v.rentab.toFixed(2)+'× — Dossier moyen</span>':'<span class="ko-b">'+v.rentab.toFixed(2)+'× — Dossier faible</span>';
+  var fb=v.marge_cash>=0?'<span class="ok-b">Finançable en leasing</span>':'<span class="ko-b">Passer en comptant / 3×</span>';
+  document.getElementById('rblock').innerHTML=
+    '<div class="rc"><div class="rl">CA total ('+v.d+' mois)</div><div class="rv">'+f(v.ca)+'</div></div>'+
+    '<div class="rc"><div class="rl">EBITDA</div><div class="rv">'+f(v.ebitda)+'</div></div>'+
+    '<div class="rc"><div class="rl">LTV TC ('+v.tc+' × 7 € × '+v.d+')</div><div class="rv">'+f(v.ltv)+'</div></div>'+
+    '<div class="rc"><div class="rl">Rentabilité globale</div><div class="rv">'+rb+'</div></div>'+
+    '<div class="rc"><div class="rl">Financement leasing</div><div class="rv">'+fb+'</div></div>'+
+    '<div class="rc"><div class="rl">Cash immédiat</div><div class="rv">'+f(v.l_cash)+'</div></div>';
+}
+
+['abo','mat','tc','maint-val','ted-val','prio-val'].forEach(function(id){document.getElementById(id).addEventListener('input',render);});
+document.getElementById('conv-val').addEventListener('input',render);
+render();
+</script>
+</body>
+</html>
